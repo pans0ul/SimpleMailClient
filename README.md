@@ -68,6 +68,69 @@ int main(int argc, char *argv[])
 }
 ```
 
+## Reason of Email rejected
+
+间歇性的 "Mail rejected" 错误通常是由以下原因造成的：
+
+常见原因
+频率限制
+
+139邮箱对发送频率有限制
+
+短时间内多次发送会被临时拒绝
+
+建议发送间隔至少30秒-1分钟
+
+服务器负载
+
+SMTP服务器繁忙时会拒绝部分请求
+
+139邮箱服务器可能有负载均衡策略
+
+IP限制
+
+同一IP短时间内发送过多邮件
+
+可能触发反垃圾邮件机制
+
+连接复用问题
+
+频繁创建/销毁SMTP连接
+
+服务器可能限制连接数
+
+解决方案
+添加重试机制：
+
+// 在连接回调中添加重试逻辑
+QObject::connect(reply, &ServerReply::finished, [=] {
+    if (reply->error()) {
+        qDebug() << "发送失败，3秒后重试...";
+        QTimer::singleShot(3000, [=]() {
+            // 重新发送
+        });
+    }
+});
+
+Copy
+增加发送间隔：
+
+测试时在每次发送间加入延时
+
+避免连续快速发送
+
+检查网络状况：
+
+网络不稳定也可能导致间歇性失败
+
+更换邮箱服务商：
+
+考虑使用Gmail、QQ邮箱等更稳定的服务
+
+建议先测试发送间隔，如果问题持续存在，可能需要联系139邮箱客服确认账户状态。
+
+
+
 ## License
 
 This project (all files including the demos/examples) is licensed under the GNU LGPL, version 2.1+.
