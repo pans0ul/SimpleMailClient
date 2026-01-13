@@ -1,2 +1,3 @@
 build*/
 demos/inc_with_passwd.h
+app/inc_with_passwd.h
