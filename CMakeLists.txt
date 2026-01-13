@@ -79,8 +79,6 @@ install(EXPORT SimpleMailTargets
 )
 
 add_subdirectory(src)
-if (BUILD_DEMOS)
-    add_subdirectory(demos)
-endif ()
+add_subdirectory(app)
 
 include(CPackConfig)
