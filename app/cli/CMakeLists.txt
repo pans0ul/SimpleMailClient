@@ -1,12 +1,12 @@
 set(SRC
-    app_cli.cpp
+    main.cpp
 )
 
-add_executable(app_cli
+add_executable(SimpleMailClientCli
     ${SRC}
 )
 
-target_link_libraries(app_cli
+target_link_libraries(SimpleMailClientCli
     SimpleMail::Core
     Qt::Core
 )
