@@ -20,6 +20,19 @@
 1. 支持静态编译，可以独立于其他平台运行
 2. 可使用加密，和非加密方式设置登陆账户和密码。
 
+3. 用户可以通过参数传递邮件客户端的相关设置，也可以通过读取文件进行设置。相关设置内容如下：
+    ```
+        #define SMTP_SERVER "smtp.xxx.com"
+        #define SMTP_SERVER_PORT 465
+
+        #define SENDER_NAME "xxxx"
+        #define SENDER_EMAIL "xxx@xxx.com"
+        #define SENDER_PASSWORD "xxx"
+
+        #define RECIPIENT_NAME "xxx"
+        #define RECIPIENT_EMAIL "xxx@xxx.com"
+    ```
+    如果参数传递与读取文件这两者都没有，就引用头文件的方式，编译到程序里面，保证加密性
 
 
 
