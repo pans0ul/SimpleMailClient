@@ -76,11 +76,11 @@ qint64 parseTimeInterval(const QString &timeStr) {
         }
     }
     
-    if (unit.startsWith("d")) return value * 24 * 60 * 60 * 1000; // 天
-    if (unit.startsWith("h")) return value * 60 * 60 * 1000;      // 小时
-    if (unit.startsWith("m")) return value * 60 * 1000;           // 分钟
-    if (unit.startsWith("s")) return value * 1000;                // 秒
-    return value; // 默认毫秒
+    if (unit.startsWith("d")) return value * 24 * 60 * 60 * 1000; // days
+    if (unit.startsWith("h")) return value * 60 * 60 * 1000;      // hours
+    if (unit.startsWith("m")) return value * 60 * 1000;           // minutes
+    if (unit.startsWith("s")) return value * 1000;                // seconds
+    return value; // default milliseconds
 }
 
 void saveProgress() {
@@ -105,26 +105,26 @@ QStringList getEmailContent(int index) {
 }
 
 void printSchedule(qint64 intervalMs, int count) {
-    qDebug() << "=== 邮件发送计划 ===";
-    qDebug() << "总邮件数量:" << count;
-    qDebug() << "文件内容读取行数:" << linesPerEmail;
-    qDebug() << "发送间隔:" << intervalMs << "毫秒";
-    qDebug() << "当前进度: 从第" << (currentIndex + 1) << "封开始";
+    qDebug() << "=== Email Sending Schedule ===";
+    qDebug() << "Total emails:" << count;
+    qDebug() << "Lines per email:" << linesPerEmail;
+    qDebug() << "Send interval:" << intervalMs << "ms";
+    qDebug() << "Current progress: Starting from email" << (currentIndex + 1);
     
     QDateTime now = QDateTime::currentDateTime();
     for (int i = currentIndex; i < count; ++i) {
         QDateTime sendTime = now.addMSecs((i - currentIndex) * intervalMs);
-        qDebug() << QString("第%1封邮件 - 预计发送时间: %2")
+        qDebug() << QString("Email #%1 - Scheduled time: %2")
                     .arg(i + 1)
                     .arg(sendTime.toString("yyyy-MM-dd hh:mm:ss"));
     }
-    qDebug() << "===================";
+    qDebug() << "===============================";
 }
 
 int workerSendMail() {
     int totalEmails = (emailContents.size() + linesPerEmail - 1) / linesPerEmail;
     if (currentIndex >= totalEmails || currentIndex >= maxCount) {
-        qDebug() << "所有邮件发送完成，程序退出";
+        qDebug() << "All emails sent, exiting program";
         QFile::remove(progressFile);
         QCoreApplication::quit();
         return 0;
@@ -132,7 +132,7 @@ int workerSendMail() {
 
     QStringList content = getEmailContent(currentIndex);
     QString emailText = content.join("\n");
-    qDebug() << QString("发送第%1封邮件 (重试:%2/%3)").arg(currentIndex + 1).arg(retryCount).arg(MAX_RETRIES);
+    qDebug() << QString("Sending email #%1 (retry: %2/%3)").arg(currentIndex + 1).arg(retryCount).arg(MAX_RETRIES);
     
     Server server;
     server.setHost(mailConfig.smtpServer);
@@ -146,7 +146,7 @@ int workerSendMail() {
     message.setSender(sender);
     EmailAddress to(mailConfig.recipientEmail, mailConfig.recipientName);
     message.addTo(to);
-    message.setSubject(QString("邮件 #%1").arg(currentIndex + 1));
+    message.setSubject(QString("Email #%1").arg(currentIndex + 1));
 
     auto text = std::make_shared<MimeText>();
     text->setText(emailText);
@@ -158,12 +158,12 @@ int workerSendMail() {
     bool finished = false;
     QEventLoop loop;
     
-    // 设置5秒超时定时器
+    // Set 5 second timeout timer
     QTimer *timeoutTimer = new QTimer();
     timeoutTimer->setSingleShot(true);
     QObject::connect(timeoutTimer, &QTimer::timeout, [&loop, &finished, &exitCode] {
         if (!finished) {
-            qDebug() << "发送超时(5秒)，视为失败";
+            qDebug() << "Send timeout (5s), marked as failed";
             exitCode = -1;
             finished = true;
             loop.quit();
@@ -180,21 +180,21 @@ int workerSendMail() {
         reply->deleteLater();
     });
 
-    timeoutTimer->start(5000); // 5秒超时
+    timeoutTimer->start(5000); // 5 second timeout
     loop.exec();
     
     timeoutTimer->deleteLater();
     
     if (exitCode == 0) {
-        qDebug() << "邮件发送成功";
+        qDebug() << "Email sent successfully";
         currentIndex++;
         retryCount = 0;
         saveProgress();
     } else {
         retryCount++;
-        qDebug() << QString("邮件发送失败，重试次数: %1/%2").arg(retryCount).arg(MAX_RETRIES);
+        qDebug() << QString("Email send failed, retry count: %1/%2").arg(retryCount).arg(MAX_RETRIES);
         if (retryCount >= MAX_RETRIES) {
-            qDebug() << "达到最大重试次数，跳过此邮件";
+            qDebug() << "Max retries reached, skipping this email";
             currentIndex++;
             retryCount = 0;
         }
@@ -208,28 +208,28 @@ int workerSendMail() {
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
-    app.setApplicationName("SimpleMail CLI");
+    app.setApplicationName("SimpleMailClient CLI");
     app.setApplicationVersion("1.0");
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("SimpleMail 命令行邮件发送工具");
+    parser.setApplicationDescription("SimpleMailClient CLI email sending tool");
     parser.addHelpOption();
     parser.addVersionOption();
 
-    parser.addPositionalArgument("content", "邮件内容文件路径");
-    parser.addPositionalArgument("interval", "发送间隔 (1d/1h/1m/1s/1000ms)");
-    parser.addPositionalArgument("count", "发送数量");
-    parser.addPositionalArgument("lines", "文件内容读取行数");
+    parser.addPositionalArgument("content", "Email content file path");
+    parser.addPositionalArgument("interval", "Send interval (1d/1h/1m/1s/1000ms)");
+    parser.addPositionalArgument("count", "Number of emails to send");
+    parser.addPositionalArgument("lines", "Lines to read per email");
 
-    QCommandLineOption configOption(QStringList() << "c" << "config", "配置文件路径", "file");
-    QCommandLineOption smtpServerOption("smtp-server", "SMTP服务器地址", "server");
-    QCommandLineOption smtpPortOption("smtp-port", "SMTP端口", "port", "465");
-    QCommandLineOption senderNameOption("sender-name", "发件人名称", "name");
-    QCommandLineOption senderEmailOption("sender-email", "发件人邮箱", "email");
-    QCommandLineOption senderPasswordOption("sender-password", "发件人密码", "password");
-    QCommandLineOption recipientNameOption("recipient-name", "收件人名称", "name");
-    QCommandLineOption recipientEmailOption("recipient-email", "收件人邮箱", "email");
-    QCommandLineOption resetOption("reset", "重置发送进度");
+    QCommandLineOption configOption(QStringList() << "c" << "config", "Config file path", "file");
+    QCommandLineOption smtpServerOption("smtp-server", "SMTP server address", "server");
+    QCommandLineOption smtpPortOption("smtp-port", "SMTP port", "port", "465");
+    QCommandLineOption senderNameOption("sender-name", "Sender name", "name");
+    QCommandLineOption senderEmailOption("sender-email", "Sender email", "email");
+    QCommandLineOption senderPasswordOption("sender-password", "Sender password", "password");
+    QCommandLineOption recipientNameOption("recipient-name", "Recipient name", "name");
+    QCommandLineOption recipientEmailOption("recipient-email", "Recipient email", "email");
+    QCommandLineOption resetOption("reset", "Reset sending progress");
 
     parser.addOption(configOption);
     parser.addOption(smtpServerOption);
@@ -248,19 +248,19 @@ int main(int argc, char *argv[]) {
         parser.showHelp(1);
     }
 
-    // 加载配置：优先级 命令行参数 > 配置文件 > 头文件默认值
+    // Load config: Priority - command line args > config file > header defaults
     bool hasConfig = false;
     
     if (parser.isSet(configOption)) {
         if (loadConfigFromFile(parser.value(configOption), mailConfig)) {
             hasConfig = true;
         } else {
-            qDebug() << "无法加载配置文件或配置不完整";
+            qDebug() << "Unable to load config file or config incomplete";
             return -1;
         }
     }
 
-    // 命令行参数覆盖配置文件
+    // Command line arguments override config file
     if (parser.isSet(smtpServerOption)) {
         mailConfig.smtpServer = parser.value(smtpServerOption);
         hasConfig = true;
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
         hasConfig = true;
     }
 
-    // 如果没有通过参数或配置文件设置，使用头文件默认值
+    // If not set via arguments or config file, use header defaults
     if (!hasConfig) {
         mailConfig.smtpServer = SMTP_SERVER;
         mailConfig.smtpPort = SMTP_SERVER_PORT;
@@ -299,23 +299,23 @@ int main(int argc, char *argv[]) {
         mailConfig.senderPassword = SENDER_PASSWORD;
         mailConfig.recipientName = RECIPIENT_NAME;
         mailConfig.recipientEmail = RECIPIENT_EMAIL;
-        qDebug() << "使用头文件默认配置";
+        qDebug() << "Using default config from header file";
     }
 
-    // 验证必需配置
+    // Validate required configuration
     if (mailConfig.smtpServer.isEmpty() || mailConfig.senderEmail.isEmpty() || 
         mailConfig.senderPassword.isEmpty() || mailConfig.recipientEmail.isEmpty()) {
-        qDebug() << "错误: 缺少必需的邮件配置";
-        qDebug() << "请通过以下方式之一提供配置:";
-        qDebug() << "1. 配置文件: --config mail_config.ini";
-        qDebug() << "2. 命令行参数: --smtp-server, --sender-email, --sender-password, --recipient-email";
-        qDebug() << "3. 头文件: ../account_info.h (编译时配置)";
+        qDebug() << "Error: Missing required email configuration";
+        qDebug() << "Please provide configuration via one of the following methods:";
+        qDebug() << "1. Config file: --config mail_config.ini";
+        qDebug() << "2. Command line arguments: --smtp-server, --sender-email, --sender-password, --recipient-email";
+        qDebug() << "3. Header file: ../account_info.h (compile-time configuration)";
         return -1;
     }
 
     if (parser.isSet(resetOption)) {
         QFile::remove(progressFile);
-        qDebug() << "发送进度已重置";
+        qDebug() << "Sending progress has been reset";
     }
 
     QString txtFile = args[0];
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
 
     emailContents = readTxtFile(txtFile);
     if (emailContents.isEmpty()) {
-        qDebug() << "无法读取文件或文件为空:" << txtFile;
+        qDebug() << "Unable to read file or file is empty:" << txtFile;
         return -1;
     }
 
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
 
     loadProgress();
     if (currentIndex >= maxCount) {
-        qDebug() << "所有邮件已发送完成";
+        qDebug() << "All emails have been sent";
         return 0;
     }
 

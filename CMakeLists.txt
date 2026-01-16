@@ -21,6 +21,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(BUILD_SHARED_LIBS "Build in shared lib mode" ON)
+option(BUILD_STATIC_EXECUTABLE "Build fully static executable" OFF)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
