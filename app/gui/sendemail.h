@@ -21,7 +21,6 @@
 
 #include <QSettings>
 #include <QWidget>
-#include "Timer.h"
 
 namespace Ui {
 class SendEmail;
