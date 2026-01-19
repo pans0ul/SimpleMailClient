@@ -66,7 +66,7 @@ jobs:
         run: cmake --build ./build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}-qt${{ matrix.config.qt_version }}
           path: |
