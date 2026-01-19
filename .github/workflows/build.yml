@@ -51,6 +51,7 @@ jobs:
         run: >
           cmake -S . -B ./build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SHARED_LIBS=OFF
           -DBUILD_STATIC_EXECUTABLE=ON
           -DCMAKE_OSX_ARCHITECTURES="${{ matrix.config.macos_architectures }}"
 
@@ -72,3 +73,4 @@ jobs:
           path: |
             build/SimpleMailClient*
             build/*.exe
+          retention-days: 7
