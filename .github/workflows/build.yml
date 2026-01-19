@@ -60,6 +60,9 @@ jobs:
         with:
           name: build-${{ matrix.os }}-qt${{ matrix.config.qt_version }}
           path: |
+            build/libSimpleMail*.so
+            build/SimpleMail*.dll
+            build/libSimpleMail*.dylib
             build/SimpleMailClient*
             build/*.exe
           retention-days: 7
