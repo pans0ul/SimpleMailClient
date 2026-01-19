@@ -26,48 +26,30 @@ jobs:
             macos_architectures: "x86_64;arm64"
 
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
         with:
-          submodules: recursive
+          version: ${{ matrix.config.qt_version }}
+          cache: true
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libgl1-mesa-dev libxkbcommon-dev
-
-      - name: Install Qt from source (Static)
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ] || [ "$RUNNER_OS" == "macOS" ]; then
-            wget https://download.qt.io/official_releases/qt/5.15/5.15.2/single/qt-everywhere-src-5.15.2.tar.xz
-            tar -xf qt-everywhere-src-5.15.2.tar.xz
-            cd qt-everywhere-src-5.15.2
-            ./configure -static -release -opensource -confirm-license -nomake examples -nomake tests -no-opengl -skip qtwebengine
-            make -j$(nproc)
-            sudo make install
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            # Use vcpkg for Windows static Qt
-            git clone https://github.com/Microsoft/vcpkg.git
-            cd vcpkg
-            ./bootstrap-vcpkg.bat
-            ./vcpkg install qt5-base:x64-windows-static qt5-tools:x64-windows-static
-          fi
-        shell: bash
-
-      - name: Install ninja-build tool
+      - name: Install ninja-build tool (must be after Qt due PATH changes)
         uses: turtlesec-no/get-ninja@main
 
       - name: Make sure MSVC is found when Ninja generator is in use
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - name: Configure project
         run: >
           cmake -S . -B ./build -G Ninja
+          --warn-uninitialized
+          -Werror=dev
           -DCMAKE_BUILD_TYPE=Release
-          -DBUILD_SHARED_LIBS=OFF
-          -DBUILD_STATIC_EXECUTABLE=ON
           -DCMAKE_OSX_ARCHITECTURES="${{ matrix.config.macos_architectures }}"
 
       - name: Build project
