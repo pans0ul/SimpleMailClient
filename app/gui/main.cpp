@@ -28,15 +28,15 @@ int main(int argc, char *argv[])
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
-    QCoreApplication::setApplicationName(QStringLiteral("SimpleMailQt"));
-    QCoreApplication::setOrganizationName(QStringLiteral("Cutelyst"));
-    QCoreApplication::setOrganizationDomain(QStringLiteral("org.cutelyst.simple-mail-qt"));
-    QCoreApplication::setApplicationVersion(QStringLiteral("2.0.0"));
+    QCoreApplication::setApplicationName(QStringLiteral("SimpleMailClient"));
+    QCoreApplication::setOrganizationName(QStringLiteral("pans0ul"));
+    QCoreApplication::setOrganizationDomain(QStringLiteral("pans0ul@163.com"));
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
 
     QApplication a(argc, argv);
     SendEmail form;
 
-    form.setWindowTitle(QLatin1String("SimpleMailQt - Demo 2"));
+    form.setWindowTitle(QLatin1String("SimpleMailClient"));
 
     form.show();
 

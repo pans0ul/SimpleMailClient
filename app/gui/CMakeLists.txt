@@ -2,18 +2,11 @@ find_package(Qt${QT_VERSION_MAJOR} 5.5.0 COMPONENTS Widgets REQUIRED)
 
 set(demo_SRCS
     sendemail.cpp
+    sendemailwidget.cpp
     main.cpp
 )
 
-if (${QT_VERSION_MAJOR} EQUAL 5)
-    qt5_wrap_ui(demo_SRCS
-        sendemail.ui
-        )
-else ()
-    qt6_wrap_ui(demo_SRCS
-        sendemail.ui
-    )
-endif ()
+
 
 add_executable(SimpleMailClient
     ${demo_SRCS}

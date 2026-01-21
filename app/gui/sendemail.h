@@ -1,30 +1,25 @@
-/*
-  Copyright (c) 2011 - Tőkés Attila
-
-  This file is part of SmtpClient for Qt.
-
-  SmtpClient for Qt is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 2 of the License, or
-  (at your option) any later version.
-
-  SmtpClient for Qt is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY.
-
-  See the LICENCE file for more details.
-*/
-
 #ifndef SENDEMAIL_H
 #define SENDEMAIL_H
 
 #include "../../src/SimpleMail"
+#include "sendemailwidget.h"
 
 #include <QSettings>
 #include <QWidget>
+#include <QTimer>
+#include <QDateTime>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
 
-namespace Ui {
-class SendEmail;
-}
+
 
 namespace SimpleMail {
 class Server;
@@ -44,14 +39,37 @@ private Q_SLOTS:
     void on_addAttachment_clicked();
     void on_openFile_clicked();
     void on_sendEmail_clicked();
+    void on_checkBox_toggled(bool checked);
+    void on_startSchedule_clicked();
+    void on_stopSchedule_clicked();
     void sendMailAsync(const MimeMessage &msg);
+    void sendNextEmail();
+    void updateTimer();
 
 private:
     QSettings m_settings;
     std::vector<Server *> m_aServers;
-    Ui::SendEmail *ui;
+    SendEmailWidget *ui;
+    QTimer *m_sendTimer;
+    QTimer *m_displayTimer;
+    QStringList m_emailContents;
+    int m_currentIndex;
+    int m_linesPerEmail;
+    int m_totalEmails;
+    int m_maxCount;
+    int m_hasSentNum;
+    qint64 m_intervalMs;
+    QDateTime m_nextSendTime;
+    QString m_progressFile;
+    QString m_currentFilePath;
 
     void errorMessage(const QString &message);
+    void loadProgress();
+    void saveProgress();
+    QStringList getEmailContent(int index);
+    qint64 parseTimeInterval(const QString &timeStr);
+    void startScheduledSending();
+    void stopScheduledSending();
 };
 
 #endif // SENDEMAIL_H
