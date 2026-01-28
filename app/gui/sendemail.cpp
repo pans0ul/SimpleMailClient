@@ -315,6 +315,11 @@ void SendEmail::startScheduledSending()
 
     m_nextSendTime = QDateTime::currentDateTime();
     m_sendTimer->start(m_intervalMs);
+    
+    // Update button appearance for active state
+    ui->startSchedule->setText("Sending in Progress...");
+    ui->startSchedule->setStyleSheet("QPushButton { background-color: #ffc107; color: black; border-radius: 5px; }"
+                                    "QPushButton:hover { background-color: #e0a800; }");
     ui->startSchedule->setEnabled(false);
     ui->stopSchedule->setEnabled(true);
 
@@ -336,6 +341,12 @@ void SendEmail::startScheduledSending()
 void SendEmail::stopScheduledSending()
 {
     m_sendTimer->stop();
+    
+    // Restore button to original state
+    ui->startSchedule->setText("Start Scheduled Sending");
+    ui->startSchedule->setStyleSheet("QPushButton { background-color: #28a745; color: white; border-radius: 5px; }"
+                                    "QPushButton:hover { background-color: #218838; }"
+                                    "QPushButton:pressed { background-color: #1e7e34; }");
     ui->startSchedule->setEnabled(true);
     ui->stopSchedule->setEnabled(false);
     m_hasSentNum = 0;
@@ -390,6 +401,9 @@ void SendEmail::sendNextEmail()
         m_hasSentNum = 0;
         return;
     }
+
+    // Update button text to show progress
+    ui->startSchedule->setText(QString("Sending %1/%2...").arg(m_hasSentNum + 1).arg(m_maxCount));
 
     QStringList content = getEmailContent(m_currentIndex);
     QString emailText = content.join("\n");
