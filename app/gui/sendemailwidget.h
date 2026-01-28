@@ -52,6 +52,15 @@ public:
     QPushButton *sendEmail;
     
     // Scheduled send tab
+    QLineEdit *hostSchd;
+    QSpinBox *portSchd;
+    QLineEdit *usernameSchd;
+    QLineEdit *passwordSchd;
+    QComboBox *securitySchd;
+    QLineEdit *senderSchd;
+    QLineEdit *recipientsSchd;
+    QLineEdit *subjectSchd;
+
     QPushButton *startSchedule;
     QPushButton *stopSchedule;
     QLineEdit *intervalEdit;
@@ -73,6 +82,9 @@ private:
     QWidget* createEmailDetailsSection();
     QWidget* createEmailContentSection();
     QWidget* createNormalAttachmentsSection();
+    QWidget* createSchdConfigSection();
+    QWidget* createSchdEmailDetailsSection();
+    QWidget* createSchdEmailContentSection();
     QFont getScaledFont(int baseSize, bool bold = false);
     int getScaledSize(int baseSize);
 };

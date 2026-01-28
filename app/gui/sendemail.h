@@ -39,12 +39,11 @@ private Q_SLOTS:
     void on_addAttachment_clicked();
     void on_openFile_clicked();
     void on_sendEmail_clicked();
-    void on_checkBox_toggled(bool checked);
     void on_startSchedule_clicked();
     void on_stopSchedule_clicked();
+    void on_tabPageChanged(const int);
     void sendMailAsync(const MimeMessage &msg);
     void sendNextEmail();
-    void updateTimer();
 
 private:
     QSettings m_settings;

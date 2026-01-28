@@ -205,9 +205,9 @@ void SendEmailWidget::setupScheduledSendTab()
     
 
     
-    scheduleLayout->addWidget(createConfigSection());
-    scheduleLayout->addWidget(createEmailDetailsSection());
-    scheduleLayout->addWidget(createEmailContentSection());
+    scheduleLayout->addWidget(createSchdConfigSection());
+    scheduleLayout->addWidget(createSchdEmailDetailsSection());
+    scheduleLayout->addWidget(createSchdEmailContentSection());
     
 
     
@@ -287,6 +287,54 @@ QWidget* SendEmailWidget::createConfigSection()
     return configWidget;
 }
 
+
+QWidget* SendEmailWidget::createSchdConfigSection()
+{
+    QWidget *configWidget = new QWidget();
+    QVBoxLayout *configLayout = new QVBoxLayout(configWidget);
+    
+    QLabel *smtpLabel = new QLabel("SMTP Configuration");
+    smtpLabel->setFont(getScaledFont(14, true));
+    configLayout->addWidget(smtpLabel);
+    
+    QGridLayout *smtpLayout = new QGridLayout();
+    smtpLayout->setSpacing(getScaledSize(8));
+    
+    smtpLayout->addWidget(new QLabel("SMTP server:"), 0, 0);
+    hostSchd = new QLineEdit("localhost");
+    hostSchd->setMinimumHeight(getScaledSize(30));
+    smtpLayout->addWidget(hostSchd, 0, 1);
+    
+    smtpLayout->addWidget(new QLabel("Port:"), 0, 2);
+    portSchd = new QSpinBox();
+    portSchd->setRange(1, 99999);
+    portSchd->setValue(465);
+    portSchd->setMinimumHeight(getScaledSize(30));
+    smtpLayout->addWidget(portSchd, 0, 3);
+    
+    securitySchd = new QComboBox();
+    securitySchd->addItems({"Unencrypted", "SSL", "TLS/STARTTLS"});
+    securitySchd->setCurrentText("SSL");
+    securitySchd->setMinimumHeight(getScaledSize(30));
+    smtpLayout->addWidget(securitySchd, 0, 4);
+    
+    smtpLayout->addWidget(new QLabel("Username:"), 1, 0);
+    usernameSchd = new QLineEdit();
+    usernameSchd->setMinimumHeight(getScaledSize(30));
+    smtpLayout->addWidget(usernameSchd, 1, 1);
+    
+    smtpLayout->addWidget(new QLabel("Password:"), 1, 2);
+    passwordSchd = new QLineEdit();
+    passwordSchd->setEchoMode(QLineEdit::Password);
+    passwordSchd->setMinimumHeight(getScaledSize(30));
+    smtpLayout->addWidget(passwordSchd, 1, 3, 1, 2);
+    
+    configLayout->addLayout(smtpLayout);
+    return configWidget;
+}
+
+
+
 QWidget* SendEmailWidget::createEmailDetailsSection()
 {
     QWidget *emailWidget = new QWidget();
@@ -316,6 +364,34 @@ QWidget* SendEmailWidget::createEmailDetailsSection()
     return emailWidget;
 }
 
+QWidget* SendEmailWidget::createSchdEmailDetailsSection()
+{
+    QWidget *emailWidget = new QWidget();
+    QVBoxLayout *emailLayout = new QVBoxLayout(emailWidget);
+    
+    QLabel *emailLabel = new QLabel("Email Details");
+    emailLabel->setFont(getScaledFont(14, true));
+    emailLayout->addWidget(emailLabel);
+    
+    QFormLayout *formLayout = new QFormLayout();
+    formLayout->setSpacing(getScaledSize(8));
+    
+    senderSchd = new QLineEdit();
+    senderSchd->setMinimumHeight(getScaledSize(30));
+    formLayout->addRow("Sender:", senderSchd);
+    
+    recipientsSchd = new QLineEdit();
+    recipientsSchd->setMinimumHeight(getScaledSize(30));
+    formLayout->addRow("Recipients:", recipientsSchd);
+    
+    subjectSchd = new QLineEdit();
+    subjectSchd->setMinimumHeight(getScaledSize(30));
+    formLayout->addRow("Subject:", subjectSchd);
+    
+    emailLayout->addLayout(formLayout);
+    
+    return emailWidget;
+}
 QWidget* SendEmailWidget::createEmailContentSection()
 {
     QWidget *contentWidget = new QWidget();
@@ -326,6 +402,23 @@ QWidget* SendEmailWidget::createEmailContentSection()
     contentLayout->addWidget(contentLabel);
     
     texteditor = new QTextEdit();
+    texteditor->setMinimumHeight(getScaledSize(150));
+    contentLayout->addWidget(texteditor);
+    
+    return contentWidget;
+}
+
+QWidget* SendEmailWidget::createSchdEmailContentSection()
+{
+    QWidget *contentWidget = new QWidget();
+    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
+    
+    QLabel *contentLabel = new QLabel("Email Content");
+    contentLabel->setFont(getScaledFont(14, true));
+    contentLayout->addWidget(contentLabel);
+    
+    texteditor = new QTextEdit();
+    texteditor->setPlaceholderText("Email Content will be auto-generated...");
     texteditor->setMinimumHeight(getScaledSize(150));
     contentLayout->addWidget(texteditor);
     

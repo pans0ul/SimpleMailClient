@@ -30,6 +30,7 @@ SendEmail::SendEmail(QWidget *parent)
     layout->addWidget(ui);
     layout->setContentsMargins(0, 0, 0, 0);
 
+    //Normal Tab
     ui->host->setText(
         m_settings.value(QStringLiteral("host"), QStringLiteral("localhost")).toString());
     ui->port->setValue(m_settings.value(QStringLiteral("port"), 465).toInt());
@@ -39,17 +40,31 @@ SendEmail::SendEmail(QWidget *parent)
     ui->sender->setText(m_settings.value(QStringLiteral("sender")).toString());
     ui->recipients->setText(m_settings.value(QStringLiteral("recipients")).toString());
     ui->subject->setText(m_settings.value(QStringLiteral("subject")).toString());
+
+
+    //Schedule Tab
+    ui->hostSchd->setText(
+            m_settings.value(QStringLiteral("host"), QStringLiteral("localhost")).toString());
+    ui->portSchd->setValue(m_settings.value(QStringLiteral("port"), 465).toInt());
+    ui->usernameSchd->setText(m_settings.value(QStringLiteral("username")).toString());
     
+    ui->passwordSchd->setText(m_settings.value(QStringLiteral("password")).toString());
+    ui->securitySchd->setCurrentIndex(m_settings.value(QStringLiteral("ssl"), 1).toInt());
+
+    ui->senderSchd->setText(m_settings.value(QStringLiteral("sender")).toString());
+    ui->recipientsSchd->setText(m_settings.value(QStringLiteral("recipients")).toString());
+    ui->subjectSchd->setText(m_settings.value(QStringLiteral("subject")).toString());
+
 
     connect(ui->openFile, &QPushButton::clicked, this, &SendEmail::on_openFile_clicked);
     connect(ui->sendEmail, &QPushButton::clicked, this, &SendEmail::on_sendEmail_clicked);
     connect(ui->addAttachment, &QPushButton::clicked, this, &SendEmail::on_addAttachment_clicked);
     connect(ui->startSchedule, &QPushButton::clicked, this, &SendEmail::on_startSchedule_clicked);
     connect(ui->stopSchedule, &QPushButton::clicked, this, &SendEmail::on_stopSchedule_clicked);
+    connect(ui->tabWidget,&QTabWidget::currentChanged, this, &SendEmail::on_tabPageChanged);
+
 
     connect(m_sendTimer, &QTimer::timeout, this, &SendEmail::sendNextEmail);
-    connect(m_displayTimer, &QTimer::timeout, this, &SendEmail::updateTimer);
-    m_displayTimer->start(1000);
 
 }
 
@@ -203,14 +218,7 @@ void SendEmail::errorMessage(const QString &message)
     QMessageBox::critical(this, "Error", message);
 }
 
-void SendEmail::on_checkBox_toggled(bool checked)
-{
-    if (!checked && m_sendTimer->isActive()) {
-        stopScheduledSending();
-    }
-    ui->startSchedule->setEnabled(!checked || !m_sendTimer->isActive());
-    ui->stopSchedule->setEnabled(checked && m_sendTimer->isActive());
-}
+
 
 void SendEmail::loadProgress()
 {
@@ -309,7 +317,7 @@ void SendEmail::startScheduledSending()
     m_sendTimer->start(m_intervalMs);
     ui->startSchedule->setEnabled(false);
     ui->stopSchedule->setEnabled(true);
-    
+
     // Save settings
     m_settings.setValue(QStringLiteral("host"), ui->host->text());
     m_settings.setValue(QStringLiteral("port"), ui->port->value());
@@ -343,6 +351,35 @@ void SendEmail::on_stopSchedule_clicked()
     stopScheduledSending();
 }
 
+void SendEmail::on_tabPageChanged(int index)
+{
+    if(index == 1) // If schedule tab is selected
+    {
+                // Load saved settings for schedule tab
+        ui->hostSchd->setText(ui->host->text());
+        ui->portSchd->setValue(ui->port->value());
+        ui->usernameSchd->setText(ui->username->text());
+        ui->passwordSchd->setText(ui->password->text());
+        ui->securitySchd->setCurrentIndex(ui->security->currentIndex());
+        ui->senderSchd->setText(ui->sender->text());
+        ui->recipientsSchd->setText(ui->recipients->text());
+        ui->subjectSchd->setText(ui->subject->text());    
+    }
+    else if(index == 0)
+    {
+        // Save settings from schedule tab back to normal tab
+        ui->host->setText(ui->hostSchd->text());
+        ui->port->setValue(ui->portSchd->value());
+        ui->username->setText(ui->usernameSchd->text());
+        ui->password->setText(ui->passwordSchd->text());
+        ui->security->setCurrentIndex(ui->securitySchd->currentIndex());
+        ui->sender->setText(ui->senderSchd->text());
+        ui->recipients->setText(ui->recipientsSchd->text());
+        ui->subject->setText(ui->subjectSchd->text());    
+    }
+
+}
+
 void SendEmail::sendNextEmail()
 {
     if(m_hasSentNum >= m_maxCount)
@@ -361,11 +398,11 @@ void SendEmail::sendNextEmail()
     ui->texteditor->setText(emailText);
 
     MimeMessage message;
-    message.setSender(EmailAddress{ui->sender->text()});
-    message.setSubject(ui->subject->text().isEmpty() ? QString("Email #%1").arg(m_currentIndex + 1) : ui->subject->text());
+    message.setSender(EmailAddress{ui->senderSchd->text()});
+    message.setSubject(ui->subjectSchd->text().isEmpty() ? QString("Email #%1").arg(m_currentIndex + 1) : ui->subjectSchd->text());
     
     const QStringList rcptStringList =
-        ui->recipients->text().split(QLatin1Char(';'), Qt::SkipEmptyParts);
+        ui->recipientsSchd->text().split(QLatin1Char(';'), Qt::SkipEmptyParts);
     for (const QString &to : rcptStringList) {
         message.addTo(EmailAddress{to});
     }
@@ -374,10 +411,10 @@ void SendEmail::sendNextEmail()
     text->setText(emailText);
     message.addPart(text);
 
-    const QString host = ui->host->text();
-    const quint16 port(ui->port->value());
-    const Server::ConnectionType ct = ui->security->currentIndex() == 0 ? Server::TcpConnection
-                                      : ui->security->currentIndex() == 1 ? Server::SslConnection
+    const QString host = ui->hostSchd->text();
+    const quint16 port(ui->portSchd->value());
+    const Server::ConnectionType ct = ui->securitySchd->currentIndex() == 0 ? Server::TcpConnection
+                                      : ui->securitySchd->currentIndex() == 1 ? Server::SslConnection
                                                                           : Server::TlsConnection;
 
     Server *server = nullptr;
@@ -399,11 +436,11 @@ void SendEmail::sendNextEmail()
         m_aServers.push_back(server);
     }
 
-    const QString user = ui->username->text();
+    const QString user = ui->usernameSchd->text();
     if (!user.isEmpty()) {
         server->setAuthMethod(Server::AuthLogin);
         server->setUsername(user);
-        server->setPassword(ui->password->text());
+        server->setPassword(ui->passwordSchd->text());
     }
 
     ServerReply *reply = server->sendMail(message);
@@ -420,15 +457,4 @@ void SendEmail::sendNextEmail()
     });
     
     m_nextSendTime = QDateTime::currentDateTime().addMSecs(m_intervalMs);
-}
-
-void SendEmail::updateTimer()
-{
-    if (m_sendTimer->isActive()) {
-        QDateTime now = QDateTime::currentDateTime();
-        qint64 remaining = now.msecsTo(m_nextSendTime);
-        if (remaining < 0) remaining = 0;
-        
-        QTime time = QTime::fromMSecsSinceStartOfDay(remaining % (24 * 60 * 60 * 1000));
-    } 
 }
