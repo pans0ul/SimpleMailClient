@@ -201,7 +201,6 @@ void SendEmail::sendMailAsync(const MimeMessage &msg)
     ServerReply *reply = server->sendMail(msg);
     connect(reply, &ServerReply::finished, this, [=] {
         qDebug() << "ServerReply finished" << reply->error() << reply->responseText();
-        reply->deleteLater();
         if (reply->error()) {
             errorMessage(QLatin1String("Mail sending failed:\n") + reply->responseText());
         } else {
@@ -210,6 +209,7 @@ void SendEmail::sendMailAsync(const MimeMessage &msg)
                               reply->responseText());
             okMessage.exec();
         }
+        reply->deleteLater();
     });
 }
 
@@ -395,7 +395,7 @@ void SendEmail::sendNextEmail()
     QString emailText = content.join("\n");
     
     // Update the email content display in schedule tab
-    ui->texteditor->setText(emailText);
+    ui->texteditorSchd->setText(emailText);
 
     MimeMessage message;
     message.setSender(EmailAddress{ui->senderSchd->text()});

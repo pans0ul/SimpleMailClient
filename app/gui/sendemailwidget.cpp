@@ -59,6 +59,7 @@ void SendEmailWidget::setupFonts()
     }
     
     if (texteditor) texteditor->setFont(getScaledFont(10));
+    if (texteditorSchd) texteditorSchd->setFont(getScaledFont(10));
     if (utextBrowser) utextBrowser->setFont(getScaledFont(9));
     if (attachments) attachments->setFont(getScaledFont(9));
 }
@@ -417,10 +418,10 @@ QWidget* SendEmailWidget::createSchdEmailContentSection()
     contentLabel->setFont(getScaledFont(14, true));
     contentLayout->addWidget(contentLabel);
     
-    texteditor = new QTextEdit();
-    texteditor->setPlaceholderText("Email Content will be auto-generated...");
-    texteditor->setMinimumHeight(getScaledSize(150));
-    contentLayout->addWidget(texteditor);
+    texteditorSchd = new QTextEdit();
+    texteditorSchd->setPlaceholderText("Email Content will be auto-generated...");
+    texteditorSchd->setMinimumHeight(getScaledSize(150));
+    contentLayout->addWidget(texteditorSchd);
     
     return contentWidget;
 }

@@ -60,6 +60,8 @@ public:
     QLineEdit *senderSchd;
     QLineEdit *recipientsSchd;
     QLineEdit *subjectSchd;
+    QTextEdit *texteditorSchd;
+
 
     QPushButton *startSchedule;
     QPushButton *stopSchedule;
