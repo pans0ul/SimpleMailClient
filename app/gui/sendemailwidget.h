@@ -21,6 +21,8 @@
 #include <QTimer>
 #include <QApplication>
 #include <QScreen>
+#include <QMenu>
+#include <QAction>
 
 class SendEmailWidget : public QWidget
 {
@@ -74,6 +76,10 @@ public slots:
     void updateTaskSchedule();
     void addTaskToSchedule(const QString &taskInfo);
     void clearTaskSchedule();
+
+private slots:
+    void showAttachmentContextMenu(const QPoint &pos);
+    void removeSelectedAttachment();
 
 private:
     void setupUI();

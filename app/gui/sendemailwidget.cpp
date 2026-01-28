@@ -1,4 +1,6 @@
 #include "sendemailwidget.h"
+#include <QMenu>
+#include <QAction>
 
 SendEmailWidget::SendEmailWidget(QWidget *parent)
     : QWidget(parent)
@@ -444,9 +446,32 @@ QWidget* SendEmailWidget::createNormalAttachmentsSection()
     
     attachments = new QListWidget();
     attachments->setMaximumHeight(getScaledSize(60));
+    attachments->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(attachments, &QListWidget::customContextMenuRequested,
+            this, &SendEmailWidget::showAttachmentContextMenu);
     attachLayout->addWidget(attachments);
     
     return attachWidget;
+}
+
+void SendEmailWidget::showAttachmentContextMenu(const QPoint &pos)
+{
+    QListWidgetItem *item = attachments->itemAt(pos);
+    if (!item) return;
+    
+    QMenu contextMenu(this);
+    QAction *removeAction = contextMenu.addAction("Remove");
+    connect(removeAction, &QAction::triggered, this, &SendEmailWidget::removeSelectedAttachment);
+    
+    contextMenu.exec(attachments->mapToGlobal(pos));
+}
+
+void SendEmailWidget::removeSelectedAttachment()
+{
+    QListWidgetItem *currentItem = attachments->currentItem();
+    if (currentItem) {
+        delete attachments->takeItem(attachments->row(currentItem));
+    }
 }
 
 void SendEmailWidget::updateTaskSchedule()
