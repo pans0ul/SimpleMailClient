@@ -1,11 +1,4 @@
 #include <QtCore>
-#include <QTimer>
-#include <QTextStream>
-#include <QFile>
-#include <QDateTime>
-#include <QSettings>
-#include <QCommandLineParser>
-
 #include "../../src/SimpleMail"
 #include "../account_info.h"
 
@@ -13,7 +6,7 @@ using namespace SimpleMail;
 
 struct MailConfig {
     QString smtpServer;
-    int smtpPort = 465;
+    int smtpPort = 465; //default port
     QString senderName;
     QString senderEmail;
     QString senderPassword;
@@ -28,13 +21,14 @@ int maxCount = 0;
 int linesPerEmail = 1;
 int retryCount = 0;
 const int MAX_RETRIES = 3;
+const int DEFAULT_INTERVAL_MS = 2000;
 QString progressFile = "mail_progress.ini";
 
 bool loadConfigFromFile(const QString &filename, MailConfig &config) {
-    QSettings settings(filename, QSettings::IniFormat);
     if (!QFile::exists(filename)) {
         return false;
     }
+    QSettings settings(filename, QSettings::IniFormat);
     
     config.smtpServer = settings.value("smtp/server").toString();
     config.smtpPort = settings.value("smtp/port", 465).toInt();
@@ -323,7 +317,7 @@ int main(int argc, char *argv[]) {
     maxCount = args[2].toInt();
     linesPerEmail = args[3].toInt();
 
-    if (interval <= 0) interval = 2000;
+    if (interval <= 0) interval = DEFAULT_INTERVAL_MS;
     if (maxCount <= 0) maxCount = 1;
     if (linesPerEmail <= 0) linesPerEmail = 1;
 
