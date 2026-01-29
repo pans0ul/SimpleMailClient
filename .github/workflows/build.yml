@@ -58,8 +58,8 @@ jobs:
       - name: Move libraries to build directory
         run: |
           if [ -d "build/src" ]; then
-            find build/src -name "libSimpleMail*" -type f -exec mv {} build/ \;
-            find build/src -name "SimpleMail*.dll" -type f -exec mv {} build/ \; 2>/dev/null || true
+            find build/src -name "libSimpleMail*" -exec mv {} build/ \;
+            find build/src -name "SimpleMail*.dll" -exec mv {} build/ \; 2>/dev/null || true
           fi
         shell: bash
 
