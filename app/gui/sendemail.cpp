@@ -9,8 +9,15 @@
 #include <QFileDialog>
 #include <QSslError>
 #include <QVBoxLayout>
+#include <QCryptographicHash>
+#include <QByteArray>
 
 using namespace SimpleMail;
+
+#define DEFAULT_INTERVAL_MS 3000
+#define DEFAULT_SMTP_PORT 465
+
+#define SECURITY_KEY "SIMPLEMAILCLIENT@PANS0UL"
 
 SendEmail::SendEmail(QWidget *parent)
     : QWidget(parent)
@@ -23,7 +30,7 @@ SendEmail::SendEmail(QWidget *parent)
     , m_totalEmails(0)
     , m_hasSentNum(0)
     , m_maxCount(0)
-    , m_intervalMs(3000)
+    , m_intervalMs(DEFAULT_INTERVAL_MS)
     , m_progressFile("mail_progress_gui.ini")
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
@@ -33,9 +40,9 @@ SendEmail::SendEmail(QWidget *parent)
     //Normal Tab
     ui->host->setText(
         m_settings.value(QStringLiteral("host"), QStringLiteral("localhost")).toString());
-    ui->port->setValue(m_settings.value(QStringLiteral("port"), 465).toInt());
+    ui->port->setValue(m_settings.value(QStringLiteral("port"), DEFAULT_SMTP_PORT).toInt());
     ui->username->setText(m_settings.value(QStringLiteral("username")).toString());
-    ui->password->setText(m_settings.value(QStringLiteral("password")).toString());
+    ui->password->setText(decryptPassword(m_settings.value(QStringLiteral("password")).toString()));
     ui->security->setCurrentIndex(m_settings.value(QStringLiteral("ssl"), 1).toInt());
     ui->sender->setText(m_settings.value(QStringLiteral("sender")).toString());
     ui->recipients->setText(m_settings.value(QStringLiteral("recipients")).toString());
@@ -45,10 +52,10 @@ SendEmail::SendEmail(QWidget *parent)
     //Schedule Tab
     ui->hostSchd->setText(
             m_settings.value(QStringLiteral("host"), QStringLiteral("localhost")).toString());
-    ui->portSchd->setValue(m_settings.value(QStringLiteral("port"), 465).toInt());
+    ui->portSchd->setValue(m_settings.value(QStringLiteral("port"), DEFAULT_SMTP_PORT).toInt());
     ui->usernameSchd->setText(m_settings.value(QStringLiteral("username")).toString());
     
-    ui->passwordSchd->setText(m_settings.value(QStringLiteral("password")).toString());
+    ui->passwordSchd->setText(decryptPassword(m_settings.value(QStringLiteral("password")).toString()));
     ui->securitySchd->setCurrentIndex(m_settings.value(QStringLiteral("ssl"), 1).toInt());
 
     ui->senderSchd->setText(m_settings.value(QStringLiteral("sender")).toString());
@@ -153,7 +160,7 @@ void SendEmail::on_sendEmail_clicked()
     m_settings.setValue(QStringLiteral("host"), ui->host->text());
     m_settings.setValue(QStringLiteral("port"), ui->port->value());
     m_settings.setValue(QStringLiteral("username"), ui->username->text());
-    m_settings.setValue(QStringLiteral("password"), ui->password->text());
+    m_settings.setValue(QStringLiteral("password"), encryptPassword(ui->password->text()));
     m_settings.setValue(QStringLiteral("ssl"), ui->security->currentIndex());
     m_settings.setValue(QStringLiteral("sender"), ui->sender->text());
     m_settings.setValue(QStringLiteral("recipients"), ui->recipients->text());
@@ -182,8 +189,8 @@ void SendEmail::sendMailAsync(const MimeMessage &msg)
 
     if (!server) {
         server = new Server(this);
-        connect(server, &Server::sslErrors, this, [](const QList<QSslError> &errors) {
-            qDebug() << "Server SSL errors" << errors.size();
+        connect(server, &Server::sslErrors, this, [this](const QList<QSslError> &errors) {
+            handleSslErrors(errors);
         });
         server->setHost(host);
         server->setPort(port);
@@ -287,7 +294,7 @@ qint64 SendEmail::parseTimeInterval(const QString &timeStr)
     }
 #endif
     
-    return totalMs > 0 ? totalMs : 3000;
+    return totalMs > 0 ? totalMs : DEFAULT_INTERVAL_MS;
 }
 
 void SendEmail::startScheduledSending()
@@ -300,7 +307,7 @@ void SendEmail::startScheduledSending()
     // Parse interval from text input
     QString intervalStr = ui->intervalEdit->text().trimmed();
     m_intervalMs = parseTimeInterval(intervalStr);
-    if (m_intervalMs <= 0) m_intervalMs = 3000;
+    if (m_intervalMs <= 0) m_intervalMs = DEFAULT_INTERVAL_MS;
     
     // Get email count and lines per email from spin boxes
     m_maxCount = ui->emailCountSpin->value();
@@ -327,7 +334,7 @@ void SendEmail::startScheduledSending()
     m_settings.setValue(QStringLiteral("host"), ui->host->text());
     m_settings.setValue(QStringLiteral("port"), ui->port->value());
     m_settings.setValue(QStringLiteral("username"), ui->username->text());
-    m_settings.setValue(QStringLiteral("password"), ui->password->text());
+    m_settings.setValue(QStringLiteral("password"), encryptPassword(ui->password->text()));
     m_settings.setValue(QStringLiteral("ssl"), ui->security->currentIndex());
     m_settings.setValue(QStringLiteral("sender"), ui->sender->text());
     m_settings.setValue(QStringLiteral("recipients"), ui->recipients->text());
@@ -441,8 +448,8 @@ void SendEmail::sendNextEmail()
 
     if (!server) {
         server = new Server(this);
-        connect(server, &Server::sslErrors, this, [](const QList<QSslError> &errors) {
-            qDebug() << "Server SSL errors" << errors.size();
+        connect(server, &Server::sslErrors, this, [this](const QList<QSslError> &errors) {
+            handleSslErrors(errors);
         });
         server->setHost(host);
         server->setPort(port);
@@ -471,4 +478,44 @@ void SendEmail::sendNextEmail()
     });
     
     m_nextSendTime = QDateTime::currentDateTime().addMSecs(m_intervalMs);
+}
+
+QString SendEmail::encryptPassword(const QString &password)
+{
+    if (password.isEmpty()) return QString();
+    QByteArray data = password.toUtf8();
+    QByteArray key = SECURITY_KEY;
+    for (int i = 0; i < data.size(); ++i) {
+        data[i] = data[i] ^ key[i % key.size()];
+    }
+    return data.toBase64();
+}
+
+QString SendEmail::decryptPassword(const QString &encryptedPassword)
+{
+    if (encryptedPassword.isEmpty()) return QString();
+    QByteArray data = QByteArray::fromBase64(encryptedPassword.toUtf8());
+    QByteArray key = SECURITY_KEY;
+    for (int i = 0; i < data.size(); ++i) {
+        data[i] = data[i] ^ key[i % key.size()];
+    }
+    return QString::fromUtf8(data);
+}
+
+void SendEmail::handleSslErrors(const QList<QSslError> &errors)
+{
+    QString errorDetails;
+    for (const QSslError &error : errors) {
+        errorDetails += QString("• %1\n").arg(error.errorString());
+    }
+    
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setWindowTitle("SSL Security Warning");
+    msgBox.setText("SSL certificate verification failed. This may indicate a security risk.");
+    msgBox.setDetailedText(QString("SSL Errors:\n%1\nRecommendation: Verify the server certificate and ensure you're connecting to the correct mail server.").arg(errorDetails));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
+    
+    qDebug() << "SSL Errors:" << errors.size() << "Details:" << errorDetails;
 }

@@ -69,6 +69,9 @@ private:
     qint64 parseTimeInterval(const QString &timeStr);
     void startScheduledSending();
     void stopScheduledSending();
+    QString encryptPassword(const QString &password);
+    QString decryptPassword(const QString &encryptedPassword);
+    void handleSslErrors(const QList<QSslError> &errors);
 };
 
 #endif // SENDEMAIL_H
