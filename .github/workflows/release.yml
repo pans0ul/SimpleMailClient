@@ -27,10 +27,28 @@ jobs:
           branch: master
           path: artifacts
 
+      - name: Package artifacts for release
+        run: |
+          cd artifacts
+          for dir in */; do
+            platform=$(echo "$dir" | sed 's/build-//g' | sed 's/\///g')
+            cd "$dir"
+            
+            # Create platform-specific package
+            if [[ "$platform" == *"windows"* ]]; then
+              zip -r "../SimpleMailClient-$platform.zip" .
+            else
+              tar -czf "../SimpleMailClient-$platform.tar.gz" .
+            fi
+            
+            cd ..
+            rm -rf "$dir"
+          done
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
+          files: artifacts/*
           draft: false
           prerelease: false
   
