@@ -207,8 +207,8 @@ void SendEmail::sendMailAsync(const MimeMessage &msg)
 
     ServerReply *reply = server->sendMail(msg);
     connect(reply, &ServerReply::finished, this, [=] {
-        qDebug() << "ServerReply finished" << reply->error() << reply->responseText();
         if (reply->error()) {
+            qDebug() << "Mail sending failed:" << reply->responseText();
             errorMessage(QLatin1String("Mail sending failed:\n") + reply->responseText());
         } else {
             QMessageBox okMessage(this);
@@ -466,7 +466,6 @@ void SendEmail::sendNextEmail()
 
     ServerReply *reply = server->sendMail(message);
     connect(reply, &ServerReply::finished, this, [=] {
-        reply->deleteLater();
         if (reply->error()) {
             qDebug() << "Email send failed:" << reply->responseText();
         } else {
@@ -475,6 +474,7 @@ void SendEmail::sendNextEmail()
             m_hasSentNum++;
             saveProgress();
         }
+        reply->deleteLater();
     });
     
     m_nextSendTime = QDateTime::currentDateTime().addMSecs(m_intervalMs);
