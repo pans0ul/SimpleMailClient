@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   release:
-    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    if: (startsWith(github.ref, 'refs/tags/') && github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     
     steps:
@@ -51,4 +51,6 @@ jobs:
           files: artifacts/*
           draft: false
           prerelease: false
+          tag_name: ${{ github.event_name == 'workflow_run' && format('auto-{0}', github.run_number) || github.ref_name }}
+          name: ${{ github.event_name == 'workflow_run' && format('Auto Release {0}', github.run_number) || github.ref_name }}
   
