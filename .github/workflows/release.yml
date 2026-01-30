@@ -26,7 +26,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const core = require('@actions/core');
             const head_sha = context.payload.workflow_run.head_sha;
             core.info(`CI run head SHA: ${head_sha}`);
             const owner = context.repo.owner;
