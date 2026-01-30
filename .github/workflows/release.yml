@@ -4,7 +4,6 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [master]
 
 permissions:
   contents: write
@@ -12,7 +11,9 @@ permissions:
 
 jobs:
   release:
-    if: github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v')
+    # Only run when the triggering CI workflow completed successfully
+    # and the triggering event was a tag push (tag pushes have no head_branch).
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && (github.event.workflow_run.head_branch == '' || github.event.workflow_run.head_branch == null) }}
     runs-on: ubuntu-latest
     
     steps:
