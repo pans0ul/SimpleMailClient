@@ -11,13 +11,64 @@ permissions:
 
 jobs:
   release:
-    # Only run when the triggering CI workflow completed successfully
-    # and the triggering event was a tag push (tag pushes have no head_branch).
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && (github.event.workflow_run.head_branch == '' || github.event.workflow_run.head_branch == null) }}
+    # Only run when the triggering CI workflow completed successfully.
+    # Tag detection is handled in the first step (we query the repo tags
+    # to see if any tag points to the CI run commit). This is more
+    # reliable across different GitHub payloads than relying on
+    # head_branch being empty/null.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     
     steps:
+      - name: Determine tag for CI commit
+        id: find_tag
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const core = require('@actions/core');
+            const head_sha = context.payload.workflow_run.head_sha;
+            core.info(`CI run head SHA: ${head_sha}`);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // List all tags and find any that point at the CI head SHA.
+            // Handle both lightweight tags (object.type === 'commit') and
+            // annotated tags (object.type === 'tag' which requires fetching
+            // the tag object to inspect the underlying commit SHA).
+            const refs = await github.rest.git.listMatchingRefs({ owner, repo, ref: 'tags' });
+            const matching = [];
+            for (const r of refs.data) {
+              if (!r.object) continue;
+              if (r.object.type === 'commit' && r.object.sha === head_sha) {
+                matching.push(r);
+                continue;
+              }
+              if (r.object.type === 'tag') {
+                try {
+                  const tagObj = await github.rest.git.getTag({ owner, repo, tag_sha: r.object.sha });
+                  if (tagObj && tagObj.data && tagObj.data.object && tagObj.data.object.sha === head_sha) {
+                    matching.push(r);
+                    continue;
+                  }
+                } catch (err) {
+                  core.info(`Could not fetch tag object for ${r.ref}: ${err}`);
+                }
+              }
+            }
+
+            if (matching.length === 0) {
+              core.info(`No tag found pointing at ${head_sha}`);
+              core.setOutput('tag', '');
+            } else {
+              const tagRef = matching[0].ref; // refs/tags/<tag>
+              const tag = tagRef.replace('refs/tags/', '');
+              core.info(`Found tag ${tag} for ${head_sha}`);
+              core.setOutput('tag', tag);
+            }
+
       - name: Download build artifacts
+        if: ${{ steps.find_tag.outputs.tag != '' }}
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,6 +78,7 @@ jobs:
           path: artifacts
 
       - name: Package artifacts for release
+        if: ${{ steps.find_tag.outputs.tag != '' }}
         run: |
           cd artifacts
           for dir in */; do
@@ -45,11 +97,12 @@ jobs:
           done
 
       - name: Create Release
+        if: ${{ steps.find_tag.outputs.tag != '' }}
         uses: softprops/action-gh-release@v1
         with:
           files: artifacts/*
           draft: false
           prerelease: false
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ steps.find_tag.outputs.tag }}
+          name: ${{ steps.find_tag.outputs.tag }}
   
