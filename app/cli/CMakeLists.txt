@@ -11,6 +11,10 @@ target_link_libraries(SimpleMailClientCli
     Qt::Core
 )
 
+target_link_options(SimpleMailClientCli PRIVATE
+    "SHELL:-Wl,-rpath,$ORIGIN"
+)
+
 if(BUILD_STATIC_EXECUTABLE)
     target_link_libraries(SimpleMailClientCli Qt::Network)
     if(UNIX AND NOT APPLE)
